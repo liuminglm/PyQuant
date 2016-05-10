@@ -15,7 +15,7 @@ from StringIO import StringIO
 
 
     
-def day_data(daima,start_date,end_date):
+def day_data(daima,start_date,end_date,fuquan):
     def time_transfer_timeStamp(time_str):
         timeArray = time.strptime(time_str, "%Y-%m-%d %H:%M:%S")
         timeStamp = int(time.mktime(timeArray))
@@ -25,7 +25,7 @@ def day_data(daima,start_date,end_date):
         data = time.mktime(time.strptime(time_str,"%a %b %d %H:%M:%S +0800 %Y"))
         return str(datetime.fromtimestamp(data))[0:10]
 
-    def get_xueqiu(daima,start_date,end_date):
+    def get_xueqiu(daima,start_date,end_date,fuquan):
         header = {'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
                     'Accept-Encoding':'gzip, deflate, sdch',
                     'Accept-Language':'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4,ja;q=0.2',
@@ -50,7 +50,7 @@ def day_data(daima,start_date,end_date):
         start_time = time_transfer_timeStamp(start_time_tmp)
         end_time = time_transfer_timeStamp(end_time_tmp)+'000'
 
-        r = s.get('https://xueqiu.com/stock/forchartk/stocklist.json?symbol='+daima_new+'&period=1day&type=before&begin='+start_time+'&end='+end_time+'&_='+end_time,headers = header)
+        r = s.get('https://xueqiu.com/stock/forchartk/stocklist.json?symbol='+daima_new+'&period=1day&type='+fuquan+'&begin='+start_time+'&end='+end_time+'&_='+end_time,headers = header)
 
         data = r.content.split('[{')[1][0:-3].split('},{')
         openp = []
@@ -162,11 +162,10 @@ def day_data(daima,start_date,end_date):
 def min_data(daima,start_date,end_date,n):
 
     def count_split_days(start_date,end_date):
-        if datetime.datetime(int(start_date[0:4]),int(start_date[4:6]),int(start_date[6:]))<datetime.datetime(2015,1,1):
-            num = (datetime.datetime(int(end_date[0:4]),int(end_date[4:6]),int(end_date[6:]))-datetime.datetime(2015,1,1)).days
+        if datetime.datetime(int(start_date[0:4]),int(start_date[4:6]),int(start_date[6:]))<datetime.datetime(2015,1,5):
+            num = (datetime.datetime(int(end_date[0:4]),int(end_date[4:6]),int(end_date[6:]))-datetime.datetime(2015,1,5)).days
         else:
             num = (datetime.datetime(int(end_date[0:4]),int(end_date[4:6]),int(end_date[6:]))-datetime.datetime(int(start_date[0:4]),int(start_date[4:6]),int(start_date[6:]))).days
-
         return num
         
         
@@ -188,13 +187,26 @@ def min_data(daima,start_date,end_date,n):
     days_internal = 120
 
     LoopNum = divmod(count_split_days(start_date,end_date),days_internal)[0]+1
-    print LoopNum
+    left = divmod(count_split_days(start_date,end_date),days_internal)[1]
     bars_set = []
+    n = 0
     for ln in range(0,LoopNum):
-        bars = md.get_bars(daima_new, mins, str(datetime.datetime(int(start_date[0:4]),int(start_date[4:6]),int(start_date[6:]))+datetime.timedelta(days=days_internal*(ln)))[0:10]+' 09:00:00', str(datetime.datetime(int(start_date[0:4]),int(start_date[4:6]),int(start_date[6:]))+datetime.timedelta(days=days_internal*(ln+1)))[0:10]+' 15:00:00')
+        if n == 0:
+            bars = md.get_bars(daima_new,mins,str(datetime.datetime(int(start_date[0:4]),int(start_date[4:6]),int(start_date[6:]))+datetime.timedelta(days=days_internal*(ln)))[0:10]+' 09:00:00',str(datetime.datetime(int(start_date[0:4]),int(start_date[4:6]),int(start_date[6:]))+datetime.timedelta(days=days_internal*(ln+1)))[0:10]+' 15:30:00')
+            n = n+1
+        else:
+            if ln == LoopNum-1:
+                bars = md.get_bars(daima_new,mins,str(datetime.datetime(int(start_date[0:4]),int(start_date[4:6]),int(start_date[6:]))+datetime.timedelta(days=days_internal*(ln)+1))[0:10]+' 09:00:00',end_date[0:4]+'-'+end_date[4:6]+'-'+end_date[6:]+' 15:30:00')
+                n = n+1
+            else:
+                bars = md.get_bars(daima_new,mins,str(datetime.datetime(int(start_date[0:4]),int(start_date[4:6]),int(start_date[6:]))+datetime.timedelta(days=days_internal*(ln)+1))[0:10]+' 09:00:00',str(datetime.datetime(int(start_date[0:4]),int(start_date[4:6]),int(start_date[6:]))+datetime.timedelta(days=days_internal*(ln+1)))[0:10]+' 15:30:00')
+                n = n+1
+                
+            
+
         bars_set.append(bars)
 
-    #bars = md.get_bars(daima_new, mins, str(datetime.datetime.now()-datetime.timedelta(days=100))[0:10]+' 09:00:00', str(datetime.datetime.now())[0:10]+' 15:00:00')
+    
     for SignalBars in bars_set:
         for b in SignalBars:
             strtime.append(b.strtime)
