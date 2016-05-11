@@ -135,7 +135,7 @@ def day_data(daima,start_date,end_date,fuquan):
         return [liutongzhishi,zongshizhi]
 
     def zuhe():
-        df_xueqiu = get_xueqiu(daima,start_date,end_date)
+        df_xueqiu = get_xueqiu(daima,start_date,end_date,fuquan)
         df_wangyi = get_wangyi(daima,start_date,end_date)
         tx_liutongshizhi = get_tenxun(daima)[0]
         tx_zongshizhi = get_tenxun(daima)[1]
